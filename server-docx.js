@@ -7,13 +7,19 @@ const { extractPlaceholders, getCustomTemplates, generateFromTemplate } = requir
 const app = express();
 const PORT = process.env.PORT || 5555;
 
-// Valid tokens (in production, use environment variables or database)
+// Load valid tokens from environment variables
 const VALID_TOKENS = [
-    'tk_7x9m2p4q8r1n6v3z5c8b1a4d7f0g2h9',
-    'auth_k5w8j3h9f2d7s6a1c4x7v0b3n6m9q2',
-    'api_9b4n7c2x5v8m1q3r6t9y2e5h8k1p4w7',
-    'sec_3f6h9k2m5p8t1w4y7r0u3i6o9l2s5d8'
-];
+    process.env.TOKEN_1 || 'tk_7x9m2p4q8r1n6v3z5c8b1a4d7f0g2h9',
+    process.env.TOKEN_2 || 'auth_k5w8j3h9f2d7s6a1c4x7v0b3n6m9q2', 
+    process.env.TOKEN_3 || 'api_9b4n7c2x5v8m1q3r6t9y2e5h8k1p4w7',
+    process.env.TOKEN_4 || 'sec_3f6h9k2m5p8t1w4y7r0u3i6o9l2s5d8'
+].filter(token => token && token.trim() !== ''); // Remove empty tokens
+
+// Validate that we have at least one token
+if (VALID_TOKENS.length === 0) {
+    console.error('❌ No valid tokens found! Please set environment variables TOKEN_1, TOKEN_2, TOKEN_3, or TOKEN_4');
+    process.exit(1);
+}
 
 // Middleware
 app.use(express.json());
@@ -288,4 +294,8 @@ app.get('/api/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 DOCX Template Generator running on http://localhost:${PORT}`);
   console.log(`🔐 HTTP Basic Authentication is enabled`);
+  console.log(`🔑 Valid tokens loaded: ${VALID_TOKENS.length} tokens`);
+  console.log(`📝 Tokens source: ${process.env.TOKEN_1 ? 'Environment variables' : 'Default values'}`);
+  console.log(`💡 Example: curl -u "api:your_token" "http://localhost:${PORT}/api/templates"`);
+  console.log(`⚠️  Production tip: Set TOKEN_1, TOKEN_2, TOKEN_3, TOKEN_4 environment variables`);
 }); 
