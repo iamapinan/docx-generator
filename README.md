@@ -6,6 +6,8 @@
 
 ✅ **Custom Template Support** - อัปโหลดและใช้ template ที่ออกแบบเอง  
 ✅ **รองรับการจัดรูปแบบที่ซับซ้อน** - Template สามารถมี formatting ที่ซับซ้อนได้  
+✅ **รองรับตัวแปรที่ไม่ครบ** - แทนที่ตัวแปรที่ไม่ได้ส่งมาด้วย `...........`  
+✅ **รองรับตัวแปรแบบ Literal** - ใช้ `{!variable}` เมื่อต้องการให้แสดงเป็น `{variable}` ในเอกสารโดยไม่แทนที่ค่า  
 ✅ **Auto Placeholder Detection** - ตรวจจับ {variable} อัตโนมัติ  
 ✅ **HTTP Basic Authentication** - ระบบยืนยันตัวตนแบบมาตรฐาน  
 ✅ **Responsive Web Interface** - ใช้งานได้ทุกอุปกรณ์  
