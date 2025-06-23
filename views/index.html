@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <title>DOCX Template Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>🚀 DOCX Template Generator</h1>
+                <nav>
+                    <a href="/">🏠 Home</a>
+                    <a href="/about">ℹ️ About</a>
+                    <a href="/docs">📖 Docs</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <h2 class="section-title">📋 Available Templates</h2>
+        <div id="templates">
+            <div class="empty-state">
+                <div class="icon">📄</div>
+                <p>กำลังโหลดเทมเพลต...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="openUploadModal()" title="อัปโหลดเทมเพลต" id="uploadFab">
+        📤
+    </button>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📤 Upload Template</h2>
+                <button class="close-btn" onclick="closeUploadModal()">&times;</button>
+            </div>
+            
+            <p>อัปโหลดไฟล์ DOCX ที่มี placeholders เช่น {name}, {date}, {email}</p>
+            
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="file-input-wrapper">
+                    <input type="file" name="template" accept=".docx" required class="file-input" />
+                    <label class="file-input-label">
+                        📁 เลือกไฟล์ DOCX Template
+                    </label>
+                </div>
+                <button type="submit" class="upload-btn" id="uploadSubmitBtn">
+                    📤 Upload Template
+                </button>
+            </form>
+            
+            <div class="tips">
+                <strong>💡 Tips:</strong> <small>ใน template ให้ใส่ placeholders เช่น {name}, {companyName} ได้เลย easy-template-x จะจัดการ formatting ให้อัตโนมัติ</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal Management
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.add('show');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('show');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('uploadModal');
+            if (event.target === modal) {
+                closeUploadModal();
+            }
+        }
+
+        // Upload Form Handler
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = document.getElementById('uploadSubmitBtn');
+            const originalText = submitBtn.innerHTML;
+
+            submitBtn.innerHTML = '<span class="loading"></span>กำลังอัปโหลด...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    submitBtn.innerHTML = '✅ สำเร็จ!';
+                    setTimeout(() => {
+                        closeUploadModal();
+                        loadTemplates();
+                        this.reset();
+                        const fileLabel = this.querySelector('.file-input-label');
+                        fileLabel.innerHTML = '📁 เลือกไฟล์ DOCX Template';
+                        fileLabel.style.color = 'var(--text-light)';
+                        fileLabel.style.borderColor = 'var(--border-light)';
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }, 1500);
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (error) {
+                alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + error.message);
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        async function loadTemplates() {
+            try {
+                const res = await fetch('/api/templates');
+                
+                if (res.status === 401) {
+                    alert('กรุณา refresh หน้าเพื่อ login ใหม่');
+                    return;
+                }
+
+                const data = await res.json();
+                const templatesDiv = document.getElementById('templates');
+                
+                if (data.templates.length === 0) {
+                    templatesDiv.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📝</div>
+                            <h3>ยังไม่มีเทมเพลต</h3>
+                            <p>อัปโหลดไฟล์ DOCX เทมเพลตแรกของคุณเพื่อเริ่มต้นใช้งาน</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                templatesDiv.innerHTML = '';
+                data.templates.forEach((template, index) => {
+                    const card = createTemplateCard(template);
+                    card.style.animationDelay = `${0.6 + (index * 0.1)}s`;
+                    templatesDiv.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading templates:', error);
+                document.getElementById('templates').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">❌</div>
+                        <h3>เกิดข้อผิดพลาด</h3>
+                        <p>ไม่สามารถโหลดเทมเพลตได้: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function createTemplateCard(template) {
+            const card = document.createElement('div');
+            card.className = 'template-card';
+
+            const fieldsHtml = template.fields
+                .map(
+                    (field) =>
+                        `<div class="field"><strong>${field.name}</strong>${
+                            field.required ? ' <span class="required">*</span>' : ''
+                        } (${field.type}) - ${field.description}</div>`
+                )
+                .join('');
+
+            // Create sample data for testing
+            const sampleData = {};
+            template.fields.forEach((field) => {
+                sampleData[field.name] = field.type === 'number' ? 100 : `example_${field.name}`;
+            });
+
+            card.innerHTML = `
+                <div class="template-header">
+                    <h3 class="template-title">📄 ${template.name}</h3>
+                    <span class="template-badge">template</span>
+                </div>
+                <p class="template-description">${template.description}</p>
+                
+                <div class="fields-section">
+                    <div class="fields-toggle" onclick="toggleFields(this)">
+                        <span>Fields ที่รองรับ (${template.fields.length} fields)</span>
+                        <span class="icon">▼</span>
+                    </div>
+                    <div class="fields-content">
+                        ${fieldsHtml}
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="test-btn">🧪 Test Generate</button>
+                    <button class="json-btn">📋 Show Sample JSON</button>
+                </div>
+            `;
+
+            // Attach events
+            const testBtn = card.querySelector('.test-btn');
+            const jsonBtn = card.querySelector('.json-btn');
+            
+            testBtn.addEventListener('click', () => testGenerate(template.id, sampleData, testBtn));
+            jsonBtn.addEventListener('click', () => showSampleData(template.id));
+
+            return card;
+        }
+
+        function toggleFields(toggleElement) {
+            const content = toggleElement.nextElementSibling;
+            const icon = toggleElement.querySelector('.icon');
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                toggleElement.classList.remove('expanded');
+                icon.textContent = '▼';
+            } else {
+                content.classList.add('expanded');
+                toggleElement.classList.add('expanded');
+                icon.textContent = '▲';
+            }
+        }
+
+        function testGenerate(templateId, sampleData, button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="loading"></span>กำลังสร้าง...';
+            button.disabled = true;
+
+            fetch(`/api/generate/${templateId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(sampleData),
+            })
+                .then((response) => {
+                    if (response.status === 401) {
+                        alert('กรุณา refresh หน้าเพื่อ login ใหม่');
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Generation failed');
+                    return response.blob();
+                })
+                .then((blob) => {
+                    if (!blob) return;
+                    
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${templateId}_test.docx`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    
+                    button.innerHTML = '✅ สำเร็จ!';
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }, 2000);
+                })
+                .catch((error) => {
+                    alert('Error: ' + error.message);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+        }
+
+        function showSampleData(templateId) {
+            fetch(`/api/template/${templateId}`)
+                .then((res) => {
+                    if (res.status === 401) {
+                        alert('กรุณา refresh หน้าเพื่อ login ใหม่');
+                        return;
+                    }
+                    return res.json();
+                })
+                .then((data) => {
+                    if (data) {
+                        alert('Sample JSON for ' + templateId + ':\n\n' + JSON.stringify(data.sampleData, null, 2));
+                    }
+                })
+                .catch((error) => alert('Error: ' + error.message));
+        }
+
+        // File input enhancement
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.querySelector('.file-input');
+            const fileLabel = document.querySelector('.file-input-label');
+            
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    fileLabel.innerHTML = `📄 ${this.files[0].name}`;
+                    fileLabel.style.color = 'var(--success-color)';
+                    fileLabel.style.borderColor = 'var(--success-color)';
+                } else {
+                    fileLabel.innerHTML = '📁 เลือกไฟล์ DOCX Template';
+                    fileLabel.style.color = 'var(--text-light)';
+                    fileLabel.style.borderColor = 'var(--border-light)';
+                }
+            });
+
+            // Initial load
+            loadTemplates();
+        });
+    </script>
+</body>
+</html> 

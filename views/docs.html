@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - DOCX Template Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>🚀 DOCX Template Generator</h1>
+                <nav>
+                    <a href="/">🏠 Home</a>
+                    <a href="/about">ℹ️ About</a>
+                    <a href="/docs">📖 Docs</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="docs-content">
+            <h2 class="section-title">📖 API Documentation</h2>
+
+            <div class="docs-section">
+                <h2>🚀 เริ่มต้นใช้งาน</h2>
+                <p>DOCX Template Generator ให้บริการ REST API สำหรับการสร้างเอกสาร Word จากเทมเพลต</p>
+                
+                <h3>Base URL</h3>
+                <div class="code-block">http://localhost:5555</div>
+
+                <h3>🔐 Authentication</h3>
+                <p>ใช้ HTTP Basic Authentication สำหรับทุก API endpoints</p>
+                <ul>
+                    <li><strong>Username:</strong> api</li>
+                    <li><strong>Password:</strong> ใช้ token ที่ได้มา</li>
+                </ul>
+                
+            </div>
+
+            <div class="docs-section">
+                <h2>📤 Upload Template</h2>
+                <p>อัปโหลดไฟล์เทมเพลต DOCX เพื่อใช้ในการสร้างเอกสาร</p>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="endpoint-url">/upload</span>
+                    </div>
+                    <p>อัปโหลดไฟล์ DOCX template พร้อม placeholders</p>
+                </div>
+
+                <h3>Request</h3>
+                <div class="code-block">curl -X POST "http://localhost:5555/upload" \
+  -u "api:admin123token" \
+  -F "template=@my-template.docx"</div>
+
+                <h3>Response</h3>
+                <div class="code-block">{
+  "message": "Template uploaded successfully",
+  "filename": "my-template.docx",
+  "templateId": "my-template"
+}</div>
+            </div>
+
+            <div class="docs-section">
+                <h2>📋 List Templates</h2>
+                <p>ดูรายการเทมเพลตที่มีอยู่ในระบบ</p>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="endpoint-url">/api/templates</span>
+                    </div>
+                    <p>แสดงรายการเทมเพลตทั้งหมดพร้อม fields ที่รองรับ</p>
+                </div>
+
+                <h3>Request</h3>
+                <div class="code-block">curl -u "api:admin123token" "http://localhost:5555/api/templates"</div>
+
+                <h3>Response</h3>
+                <div class="code-block">{
+  "templates": [
+    {
+      "id": "my-template",
+      "name": "My Template",
+      "description": "Template description",
+      "type": "custom",
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "ชื่อผู้ใช้"
+        }
+      ]
+    }
+  ]
+}</div>
+            </div>
+
+            <div class="docs-section">
+                <h2>🔍 Get Template Schema</h2>
+                <p>ดูข้อมูลเทมเพลตเฉพาะและตัวอย่างข้อมูล</p>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="endpoint-url">/api/template/{templateId}</span>
+                    </div>
+                    <p>แสดงข้อมูลเทมเพลตและตัวอย่างข้อมูลสำหรับทดสอบ</p>
+                </div>
+
+                <h3>Request</h3>
+                <div class="code-block">curl -u "api:admin123token" "http://localhost:5555/api/template/my-template"</div>
+
+                <h3>Response</h3>
+                <div class="code-block">{
+  "templateId": "my-template",
+  "config": { ... },
+  "sampleData": {
+    "name": "example_name",
+    "email": "example_email"
+  }
+}</div>
+            </div>
+
+            <div class="docs-section">
+                <h2>📄 Generate Document</h2>
+                <p>สร้างเอกสาร DOCX จากเทมเพลตและข้อมูลที่ส่งเข้ามา</p>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="endpoint-url">/api/generate/{templateId}</span>
+                    </div>
+                    <p>สร้างเอกสารด้วย JSON data</p>
+                </div>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="endpoint-url">/api/generate/{templateId}?param=value</span>
+                    </div>
+                    <p>สร้างเอกสารด้วย URL parameters</p>
+                </div>
+
+                <h3>POST Request</h3>
+                <div class="code-block">curl -X POST "http://localhost:5555/api/generate/my-template" \
+  -u "api:admin123token" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"สมชาย","email":"somchai@test.com"}' \
+  --output document.docx</div>
+
+                <h3>GET Request</h3>
+                <div class="code-block">curl -u "api:admin123token" \
+  "http://localhost:5555/api/generate/my-template?name=สมชาย&email=somchai@test.com" \
+  --output document.docx</div>
+            </div>
+
+            <div class="docs-section">
+                <h2>🔧 Extract Placeholders</h2>
+                <p>ดึงรายการ placeholders จากไฟล์เทมเพลตที่อัปโหลด</p>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="endpoint-url">/api/placeholders/{templateName}</span>
+                    </div>
+                    <p>แสดงรายการ placeholders ที่พบในเทมเพลต</p>
+                </div>
+
+                <h3>Request</h3>
+                <div class="code-block">curl -u "api:admin123token" \
+  "http://localhost:5555/api/placeholders/my-template.docx"</div>
+
+                <h3>Response</h3>
+                <div class="code-block">{
+  "templateName": "my-template.docx",
+  "placeholders": ["name", "email", "date"],
+  "totalPlaceholders": 3,
+  "sampleUrl": "/api/generate/my-template?name=example_name&email=example_email&date=example_date",
+  "sampleData": {
+    "name": "example_name",
+    "email": "example_email",
+    "date": "example_date"
+  }
+}</div>
+            </div>
+
+            <div class="docs-section">
+                <h2>🔐 Token Validation</h2>
+                <p>ตรวจสอบความถูกต้องของ Token</p>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="endpoint-url">/api/validate-token</span>
+                    </div>
+                    <p>ตรวจสอบว่า Token ที่ให้มาถูกต้องหรือไม่ (ไม่ต้อง authentication)</p>
+                </div>
+
+                <h3>Request</h3>
+                <div class="code-block">curl -X POST "http://localhost:5555/api/validate-token" \
+  -H "Content-Type: application/json" \
+  -d '{"token":"admin123token"}'</div>
+
+                <h3>Response</h3>
+                <div class="code-block">{
+  "valid": true,
+  "message": "Token is valid"
+}</div>
+            </div>
+
+            <div class="docs-section">
+                <h2>💡 Tips การใช้งาน</h2>
+                <ul>
+                    <li>ใช้ placeholders รูปแบบ <code>{variable_name}</code> ในเทมเพลต</li>
+                    <li>รองรับการจัดรูปแบบ Rich Text ในเทมเพลต</li>
+                    <li>สามารถใช้ข้อมูลซ้ำในหลายที่ของเอกสาร</li>
+                    <li>Response จะเป็นไฟล์ DOCX พร้อมดาวน์โหลด</li>
+                    <li>ใช้ Content-Type: application/json สำหรับ POST requests</li>
+                    <li><strong>ใช้ HTTP Basic Authentication กับ username "api" และ password เป็น token</strong></li>
+                    <li>Web interface จะเปิด authentication popup อัตโนมัติ</li>
+                </ul>
+            </div>
+
+            <div class="docs-section">
+                <h2>❌ Error Codes</h2>
+                <ul>
+                    <li><strong>400</strong> - Bad Request (ไม่มีไฟล์อัปโหลดหรือข้อมูลไม่ครบ)</li>
+                    <li><strong>401</strong> - Unauthorized (ไม่มี authentication หรือ credentials ไม่ถูกต้อง)</li>
+                    <li><strong>404</strong> - Template Not Found</li>
+                    <li><strong>500</strong> - Internal Server Error</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
