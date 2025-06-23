@@ -16,7 +16,8 @@ async function extractPlaceholders(templatePath) {
     const matches = docText.match(/\{([^}]+)\}/g) || [];
     const placeholders = matches
       .map((m) => m.replace(/[{}]/g, '').trim())
-      .filter((v) => v.match(/^[a-zA-Z_][a-zA-Z0-9_\.]*$/));
+      .filter((v) => v.match(/^[a-zA-Z_!][a-zA-Z0-9_\.]*$/))
+      .filter((v) => !v.startsWith('!')); // ไม่รวมตัวแปรที่ขึ้นต้นด้วย !
 
     return [...new Set(placeholders)];
   } catch (err) {
@@ -72,7 +73,7 @@ async function generateFromTemplate(templateId, data) {
   const templatePath = path.join('templates', templateId);
   if (!(await fs.pathExists(templatePath))) throw new Error(`Template file not found: ${templatePath}`);
 
-  // ดึง placeholders ทั้งหมดจาก template
+  // ดึง placeholders ทั้งหมดจาก template (ไม่รวมตัวแปรที่ขึ้นต้นด้วย !)
   const placeholders = await extractPlaceholders(templatePath);
   
   // สร้าง data object ที่ครบถ้วน โดยแทนที่ตัวแปรที่ไม่มีด้วยจุด
@@ -83,13 +84,20 @@ async function generateFromTemplate(templateId, data) {
     }
   });
 
-  console.log(`📝 Processing template: ${templateId}`);
-  console.log(`🔧 Found placeholders: ${placeholders.join(', ')}`);
-  console.log(`📄 Data provided: ${Object.keys(data).join(', ')}`);
-  console.log(`🔄 Missing fields filled with dots: ${placeholders.filter(p => data[p] === undefined || data[p] === null || data[p] === '').join(', ') || 'none'}`);
+  // เพิ่มการจัดการตัวแปร {!var} ให้แสดงเป็น {var}
+  const buffer = await fs.readFile(templatePath);
+  const handler = new TemplateHandler();
+  const docText = await handler.getText(buffer);
+  
+  // ค้นหาตัวแปรที่ขึ้นต้นด้วย ! และเพิ่มเข้า completeData
+  const literalMatches = docText.match(/\{!([^}]+)\}/g) || [];
+  literalMatches.forEach(match => {
+    const varName = match.replace(/[{}!]/g, '').trim();
+    const fullVarName = '!' + varName;
+    completeData[fullVarName] = '{' + varName + '}'; // แทนที่ {!var} ด้วย {var}
+  });
 
   const templateFile = await fs.readFile(templatePath);
-  const handler = new TemplateHandler();
   return handler.process(templateFile, completeData);
 }
 

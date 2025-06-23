@@ -71,28 +71,23 @@ app.use('/style.css', express.static(path.join(__dirname, 'views', 'style.css'))
 
 // Authentication pages (no token required)
 app.get('/login', (req, res) => {
-  console.log('🔐 Login page requested');
   res.sendFile(path.join(__dirname, 'views', 'login.html'));
 });
 
 app.get('/error', (req, res) => {
-  console.log('❌ Error page requested');
   res.sendFile(path.join(__dirname, 'views', 'error.html'));
 });
 
 // Protected pages (require basic auth)
 app.get('/', basicAuthPage, (req, res) => {
-  console.log(`🏠 Home page accessed by token: ${req.token.substring(0, 8)}...`);
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
 app.get('/about', basicAuthPage, (req, res) => {
-  console.log(`ℹ️ About page accessed by token: ${req.token.substring(0, 8)}...`);
   res.sendFile(path.join(__dirname, 'views', 'about.html'));
 });
 
 app.get('/docs', basicAuthPage, (req, res) => {
-  console.log(`📖 Docs page accessed by token: ${req.token.substring(0, 8)}...`);
   res.sendFile(path.join(__dirname, 'views', 'docs.html'));
 });
 
@@ -101,8 +96,6 @@ app.post('/upload', basicAuthPage, upload.single('template'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  
-  console.log(`✅ Template uploaded by token: ${req.token.substring(0, 8)}...`);
   
   res.json({ 
     message: 'Template uploaded successfully', 
@@ -115,9 +108,7 @@ app.post('/upload', basicAuthPage, upload.single('template'), (req, res) => {
 app.get('/api/templates', basicAuthPage, async (req, res) => {
   try {
     const customTemplates = await getCustomTemplates();
-    
-    console.log(`📋 Templates requested by token: ${req.token.substring(0, 8)}...`);
-    
+
     res.json({
       templates: Object.keys(customTemplates).map(key => ({
         id: key,
@@ -138,9 +129,7 @@ app.post('/api/generate/:templateId', basicAuthPage, async (req, res) => {
   try {
     const templateId = req.params.templateId;
     const data = req.body;
-    
-    console.log(`📄 Document generation requested by token: ${req.token.substring(0, 8)}... for template: ${templateId}`);
-    
+
     // Generate from template file
     const buffer = await generateFromTemplate(templateId + '.docx', data);
     
@@ -168,9 +157,7 @@ app.get('/api/generate/:templateId', basicAuthPage, async (req, res) => {
   try {
     const templateId = req.params.templateId;
     const data = req.query;
-    
-    console.log(`📄 Document generation (GET) requested by token: ${req.token.substring(0, 8)}... for template: ${templateId}`);
-    
+
     // Generate from template file
     const buffer = await generateFromTemplate(templateId + '.docx', data);
     
@@ -206,9 +193,7 @@ app.get('/api/template/:templateId', basicAuthPage, async (req, res) => {
         availableTemplates: Object.keys(customTemplates)
       });
     }
-    
-    console.log(`🔍 Template schema requested by token: ${req.token.substring(0, 8)}... for template: ${templateId}`);
-    
+ 
     res.json({
       templateId,
       config: template,
@@ -236,8 +221,6 @@ app.get('/api/placeholders/:templateName', basicAuthPage, async (req, res) => {
     if (!await fs.pathExists(templatePath)) {
       return res.status(404).json({ error: 'Template not found' });
     }
-    
-    console.log(`🔧 Placeholders extraction requested by token: ${req.token.substring(0, 8)}... for template: ${templateName}`);
     
     const placeholders = await extractPlaceholders(templatePath);
     
@@ -286,7 +269,7 @@ app.get('/api/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    version: '3.1.0'
+    version: '3.2.0'
   });
 });
 
@@ -294,8 +277,4 @@ app.get('/api/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 DOCX Template Generator running on http://localhost:${PORT}`);
   console.log(`🔐 HTTP Basic Authentication is enabled`);
-  console.log(`🔑 Valid tokens loaded: ${VALID_TOKENS.length} tokens`);
-  console.log(`📝 Tokens source: ${process.env.TOKEN_1 ? 'Environment variables' : 'Default values'}`);
-  console.log(`💡 Example: curl -u "api:your_token" "http://localhost:${PORT}/api/templates"`);
-  console.log(`⚠️  Production tip: Set TOKEN_1, TOKEN_2, TOKEN_3, TOKEN_4 environment variables`);
 }); 
