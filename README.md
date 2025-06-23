@@ -193,6 +193,27 @@ curl -X POST "http://localhost:5555/api/validate-token" \
 
 **สำคัญ**: easy-template-x ใช้ `{variable}` ไม่ใช่ `{{variable}}`
 
+### การจัดการข้อมูลที่ไม่ครบ
+
+✨ **ฟีเจอร์ใหม่**: หากในการส่งข้อมูลไม่ได้ส่งตัวแปรบางตัวที่มีใน template มา ระบบจะแทนที่ด้วย `...........` โดยอัตโนมัติ
+
+**ตัวอย่าง**:
+- Template มี: `{name}`, `{lastname}`, `{year}`
+- ส่งข้อมูลมาเฉพาะ: `{"name": "สมชาย"}`
+- ผลลัพธ์: 
+  - `{name}` → "สมชาย"
+  - `{lastname}` → "..........."
+  - `{year}` → "..........."
+
+```bash
+# ตัวอย่างการส่งข้อมูลไม่ครบ
+curl -u "api:your_token" \
+  -X POST "http://localhost:5555/api/generate/template" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "สมชาย"}' \
+  --output document.docx
+```
+
 ## โครงสร้างโฟลเดอร์
 
 ```
@@ -269,6 +290,40 @@ services:
 - ใน production ควรใช้ HTTPS
 - Tokens ควรเก็บใน environment variables หรือ database
 
+### Production Best Practices
+
+1. **ตั้งค่า Environment Variables**:
+   ```bash
+   export TOKEN_1="super_secure_production_key_123"
+   export TOKEN_2="another_secure_api_key_456"
+   export TOKEN_3="admin_access_token_789"
+   export TOKEN_4="backup_key_012"
+   ```
+
+2. **ใช้ HTTPS**:
+   ```bash
+   # ใช้ reverse proxy เช่น nginx หรือ apache
+   # หรือใช้ load balancer ที่รองรับ SSL termination
+   ```
+
+3. **ตั้งค่า PORT สำหรับ production**:
+   ```bash
+   export PORT=3000
+   ```
+
+4. **ตรวจสอบ Logs**:
+   - ระบบจะแสดง logs การ process template
+   - ตรวจสอบ fields ที่ไม่ได้ส่งมาและถูกแทนที่ด้วยจุด
+   - ตรวจสอบการใช้งาน tokens
+
+### การแทนที่ข้อมูลเปล่า
+
+ระบบจะแทนที่ข้อมูลเปล่าด้วย `...........` ในกรณีต่อไปนี้:
+- `undefined` 
+- `null`
+- `""` (string เปล่า)
+- ไม่ได้ส่ง field มาเลย
+
 ## ตัวอย่างการใช้งาน
 
 ### 1. อัปโหลด Template ผ่าน Web
@@ -284,10 +339,36 @@ services:
 curl -u "api:tk_7x9m2p4q8r1n6v3z5c8b1a4d7f0g2h9" \
   "http://localhost:5555/api/templates"
 
-# สร้างเอกสาร
+# ดูรายละเอียด template เฉพาะ
 curl -u "api:tk_7x9m2p4q8r1n6v3z5c8b1a4d7f0g2h9" \
-  "http://localhost:5555/api/generate/template?customerName=บริษัท ABC&date=2024-01-01&price=10000" \
-  --output invoice.docx
+  "http://localhost:5555/api/template/example"
+
+# สร้างเอกสารพร้อมข้อมูลครบ (GET method)
+curl -u "api:tk_7x9m2p4q8r1n6v3z5c8b1a4d7f0g2h9" \
+  "http://localhost:5555/api/generate/example?name=สมชาย&lastname=ใจดี&year=2024" \
+  --output document_full.docx
+
+# สร้างเอกสารพร้อมข้อมูลครบ (POST method)
+curl -u "api:tk_7x9m2p4q8r1n6v3z5c8b1a4d7f0g2h9" \
+  -X POST "http://localhost:5555/api/generate/example" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "สมชาย", "lastname": "ใจดี", "year": "2024"}' \
+  --output document_full.docx
+
+# สร้างเอกสารข้อมูลไม่ครบ (ตัวแปรที่ไม่มีจะเป็นจุด)
+curl -u "api:tk_7x9m2p4q8r1n6v3z5c8b1a4d7f0g2h9" \
+  -X POST "http://localhost:5555/api/generate/example" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "สมชาย"}' \
+  --output document_partial.docx
+```
+
+### 3. การตรวจสอบ Placeholders
+
+```bash
+# ดู placeholders ที่มีใน template
+curl -u "api:tk_7x9m2p4q8r1n6v3z5c8b1a4d7f0g2h9" \
+  "http://localhost:5555/api/placeholders/example.docx"
 ```
 
 ## การพัฒนา
@@ -295,6 +376,42 @@ curl -u "api:tk_7x9m2p4q8r1n6v3z5c8b1a4d7f0g2h9" \
 ```bash
 npm run dev  # สำหรับ development mode ด้วย nodemon
 ```
+
+### Debug และ Troubleshooting
+
+1. **ตรวจสอบ Logs**:
+   - เมื่อ process template ระบบจะแสดง:
+     - รายชื่อ placeholders ที่พบใน template
+     - ข้อมูลที่ได้รับจาก request
+     - fields ที่ไม่มีข้อมูลและถูกแทนที่ด้วยจุด
+
+2. **ตัวอย่าง Log Output**:
+   ```
+   📝 Processing template: example.docx
+   🔧 Found placeholders: name, lastname, year
+   📄 Data provided: name
+   🔄 Missing fields filled with dots: lastname, year
+   ```
+
+3. **ตรวจสอบ Template**:
+   ```bash
+   # ดู placeholders ใน template
+   curl -u "api:token" "http://localhost:5555/api/placeholders/template.docx"
+   
+   # ดูโครงสร้าง template
+   curl -u "api:token" "http://localhost:5555/api/template/template-name"
+   ```
+
+4. **ทดสอบ Authentication**:
+   ```bash
+   # ตรวจสอบ token
+   curl -X POST "http://localhost:5555/api/validate-token" \
+     -H "Content-Type: application/json" \
+     -d '{"token":"your_token"}'
+   
+   # ตรวจสอบ health
+   curl "http://localhost:5555/api/health"
+   ```
 
 ## Error Codes
 
@@ -305,7 +422,14 @@ npm run dev  # สำหรับ development mode ด้วย nodemon
 
 ## Changelog
 
-### v3.0.0 (Current)
+### v3.1.0 (Current)
+- เพิ่ม Environment Variables support สำหรับ tokens
+- เพิ่มการแทนที่ตัวแปรที่ไม่ได้ส่งมาด้วย `...........` อัตโนมัติ
+- เพิ่ม logging การ process template แบบละเอียด
+- ปรับปรุง security guidelines
+- อัปเดต Docker support ด้วย environment variables
+
+### v3.0.0
 - เพิ่ม HTTP Basic Authentication
 - ปรับปรุง Web Interface ด้วย modern design
 - เพิ่ม responsive design

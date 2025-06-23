@@ -72,9 +72,25 @@ async function generateFromTemplate(templateId, data) {
   const templatePath = path.join('templates', templateId);
   if (!(await fs.pathExists(templatePath))) throw new Error(`Template file not found: ${templatePath}`);
 
+  // ดึง placeholders ทั้งหมดจาก template
+  const placeholders = await extractPlaceholders(templatePath);
+  
+  // สร้าง data object ที่ครบถ้วน โดยแทนที่ตัวแปรที่ไม่มีด้วยจุด
+  const completeData = { ...data };
+  placeholders.forEach(placeholder => {
+    if (completeData[placeholder] === undefined || completeData[placeholder] === null || completeData[placeholder] === '') {
+      completeData[placeholder] = '...........';
+    }
+  });
+
+  console.log(`📝 Processing template: ${templateId}`);
+  console.log(`🔧 Found placeholders: ${placeholders.join(', ')}`);
+  console.log(`📄 Data provided: ${Object.keys(data).join(', ')}`);
+  console.log(`🔄 Missing fields filled with dots: ${placeholders.filter(p => data[p] === undefined || data[p] === null || data[p] === '').join(', ') || 'none'}`);
+
   const templateFile = await fs.readFile(templatePath);
   const handler = new TemplateHandler();
-  return handler.process(templateFile, { ...data });
+  return handler.process(templateFile, completeData);
 }
 
 module.exports = {
