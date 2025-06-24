@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs-extra');
 const path = require('path');
 const multer = require('multer');
-const { extractPlaceholders, getCustomTemplates, generateFromTemplate } = require('./utils/templateUtils');
+const { extractPlaceholders, getCustomTemplates, generateFromTemplate, deleteTemplate } = require('./utils/templateUtils');
 
 const app = express();
 const PORT = process.env.PORT || 5555;
@@ -121,6 +121,34 @@ app.get('/api/templates', basicAuthPage, async (req, res) => {
   } catch (error) {
     console.error('Error listing templates:', error);
     res.status(500).json({ error: 'Failed to list templates' });
+  }
+});
+
+// Delete template (requires basic auth)
+app.delete('/api/template/:templateId', basicAuthPage, async (req, res) => {
+  try {
+    const templateId = req.params.templateId;
+    
+    if (!templateId) {
+      return res.status(400).json({ error: 'Template ID is required' });
+    }
+
+    await deleteTemplate(templateId);
+    
+    res.json({ 
+      message: 'Template deleted successfully', 
+      templateId: templateId
+    });
+  } catch (error) {
+    console.error('Error deleting template:', error);
+    if (error.message.includes('Template file not found')) {
+      res.status(404).json({ error: 'Template not found' });
+    } else {
+      res.status(500).json({ 
+        error: 'Failed to delete template', 
+        details: error.message 
+      });
+    }
   }
 });
 

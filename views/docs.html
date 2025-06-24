@@ -128,6 +128,33 @@
             </div>
 
             <div class="docs-section">
+                <h2>🗑️ Delete Template</h2>
+                <p>ลบเทมเพลตจากระบบ</p>
+
+                <div class="endpoint">
+                    <div class="endpoint-header">
+                        <span class="method delete">DELETE</span>
+                        <span class="endpoint-url">/api/template/{templateId}</span>
+                    </div>
+                    <p>ลบไฟล์เทมเพลตออกจากระบบ (ไม่สามารถกู้คืนได้)</p>
+                </div>
+
+                <h3>Request</h3>
+                <div class="code-block">curl -X DELETE -u "api:admin123token" "http://localhost:5555/api/template/my-template"</div>
+
+                <h3>Response</h3>
+                <div class="code-block">{
+  "message": "Template deleted successfully",
+  "templateId": "my-template"
+}</div>
+
+                <h3>Error Response</h3>
+                <div class="code-block">{
+  "error": "Template not found"
+}</div>
+            </div>
+
+            <div class="docs-section">
                 <h2>📄 Generate Document</h2>
                 <p>สร้างเอกสาร DOCX จากเทมเพลตและข้อมูลที่ส่งเข้ามา</p>
 

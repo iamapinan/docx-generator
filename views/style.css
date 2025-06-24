@@ -242,7 +242,7 @@ nav a:hover {
 }
 
 .fields-content.expanded {
-    max-height: 500px;
+    max-height: 100%;
     padding-top: 0.75rem;
 }
 
@@ -301,6 +301,10 @@ button:disabled {
 
 .json-btn {
     background: linear-gradient(135deg, var(--warning-color), #d97706);
+}
+
+.delete-btn {
+    background: linear-gradient(135deg, var(--error-color), #dc2626);
 }
 
 /* Tips Section */
@@ -475,6 +479,7 @@ code {
 
 .method.get { background: var(--success-color); }
 .method.post { background: var(--primary-color); }
+.method.delete { background: var(--error-color); }
 
 .endpoint-url {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;

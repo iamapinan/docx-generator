@@ -201,15 +201,18 @@
                 <div class="button-group">
                     <button class="test-btn">🧪 Test Generate</button>
                     <button class="json-btn">📋 Show Sample JSON</button>
+                    <button class="delete-btn">🗑️ ลบ Template</button>
                 </div>
             `;
 
             // Attach events
             const testBtn = card.querySelector('.test-btn');
             const jsonBtn = card.querySelector('.json-btn');
+            const deleteBtn = card.querySelector('.delete-btn');
             
             testBtn.addEventListener('click', () => testGenerate(template.id, sampleData, testBtn));
             jsonBtn.addEventListener('click', () => showSampleData(template.id));
+            deleteBtn.addEventListener('click', () => deleteTemplate(template.id, template.name, deleteBtn));
 
             return card;
         }
@@ -285,6 +288,47 @@
                     }
                 })
                 .catch((error) => alert('Error: ' + error.message));
+        }
+
+        function deleteTemplate(templateId, templateName, button) {
+            // Confirm deletion
+            if (!confirm(`คุณแน่ใจหรือไม่ที่จะลบ template "${templateName}"?\n\nการดำเนินการนี้ไม่สามารถยกเลิกได้`)) {
+                return;
+            }
+
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="loading"></span>กำลังลบ...';
+            button.disabled = true;
+
+            fetch(`/api/template/${templateId}`, {
+                method: 'DELETE',
+            })
+                .then((response) => {
+                    if (response.status === 401) {
+                        alert('กรุณา refresh หน้าเพื่อ login ใหม่');
+                        return;
+                    }
+                    if (response.status === 404) {
+                        alert('ไม่พบ template ที่ต้องการลบ');
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Delete failed');
+                    return response.json();
+                })
+                .then((data) => {
+                    if (data) {
+                        button.innerHTML = '✅ ลบแล้ว!';
+                        setTimeout(() => {
+                            // Reload templates to refresh the list
+                            loadTemplates();
+                        }, 1000);
+                    }
+                })
+                .catch((error) => {
+                    alert('เกิดข้อผิดพลาดในการลบ template: ' + error.message);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
         }
 
         // File input enhancement

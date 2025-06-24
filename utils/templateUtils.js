@@ -86,8 +86,12 @@ async function generateFromTemplate(templateId, data) {
 
   // เพิ่มการจัดการตัวแปร {!var} ให้แสดงเป็น {var}
   const buffer = await fs.readFile(templatePath);
+  // สร้าง TemplateHandler แยกสำหรับ getText
+  const textHandler = new TemplateHandler();
+  const docText = await textHandler.getText(buffer);
+  
+  // สร้าง TemplateHandler สำหรับ process ที่รักษา formatting
   const handler = new TemplateHandler();
-  const docText = await handler.getText(buffer);
   
   // ค้นหาตัวแปรที่ขึ้นต้นด้วย ! และเพิ่มเข้า completeData
   const literalMatches = docText.match(/\{!([^}]+)\}/g) || [];
@@ -101,8 +105,30 @@ async function generateFromTemplate(templateId, data) {
   return handler.process(templateFile, completeData);
 }
 
+/**
+ * Delete a template file
+ * @param {string} templateId - template id (without .docx extension)
+ * @returns {Promise<boolean>} true if deleted successfully
+ */
+async function deleteTemplate(templateId) {
+  try {
+    const templatePath = path.join('templates', templateId + '.docx');
+    
+    if (!(await fs.pathExists(templatePath))) {
+      throw new Error(`Template file not found: ${templateId}.docx`);
+    }
+    
+    await fs.remove(templatePath);
+    return true;
+  } catch (err) {
+    console.error('Error deleting template:', err);
+    throw err;
+  }
+}
+
 module.exports = {
   extractPlaceholders,
   getCustomTemplates,
   generateFromTemplate,
+  deleteTemplate,
 }; 
